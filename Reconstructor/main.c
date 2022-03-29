@@ -14,9 +14,9 @@
 long secondsBlocked;
 long transferedCharacters;
 const char* fileName = "./input.txt";
-sem_t clientSemaphore;
-sem_t reconstructorSemaphore;
-sem_t metadataSemaphore;
+sem_t* clientSemaphore;
+sem_t* reconstructorSemaphore;
+sem_t* metadataSemaphore;
 int memSize;
 data *memoryAddress;
 char *metadataAddress;
@@ -57,9 +57,9 @@ void readTextFromMemory(){
 
     while (!finished){
         getchar();
-        wait(&reconstructorSemaphore);
+        wait(reconstructorSemaphore);
         loadCharFromDataAddress(text, currentDataAddress, counter);
-        sem_post(&clientSemaphore);
+        sem_post(clientSemaphore);
         counter += 1;
         currentDataAddress = obtainNextDataAddress(currentDataAddress, counter);
         printf("Reconstruccion: %s", text);
@@ -95,16 +95,16 @@ int main()
 
     secondsBlocked = 0;
 
-    clientSemaphore = sharedMem->clientSemaphore;
-    reconstructorSemaphore = sharedMem->reconstructorSemaphore;
-    metadataSemaphore = sharedMem->metadataSemaphore;
+    clientSemaphore = sem_open(CLIENT_SEMAPHORE, 0);
+    reconstructorSemaphore = sem_open(RECONSTRUCTOR_SEMAPHORE, 0);
+    metadataSemaphore = sem_open(METADATA_SEMAPHORE, 0);
 
     readTextFromMemory();
     time(&end);
 
     long userModeTime = end-start;
-    wait(&metadataSemaphore);
+    wait(metadataSemaphore);
     // Escribir en metadata
-    sem_post(&metadataSemaphore);
+    sem_post(metadataSemaphore);
     return 0;
 }

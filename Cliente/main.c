@@ -9,15 +9,16 @@
 #include<sys/types.h>
 #include<string.h>
 #include<errno.h>
+#include<fcntl.h>
 
 #define MEMORY_KEY 0x1234
 
 long secondsBlocked;
 long transferedCharacters;
 const char* fileName = "./input.txt";
-sem_t clientSemaphore;
-sem_t reconstructorSemaphore;
-sem_t metadataSemaphore;
+sem_t* clientSemaphore;
+sem_t* reconstructorSemaphore;
+sem_t* metadataSemaphore;
 data *memoryAddress;
 char *metadataAddress;
 int textSize = 1000;
@@ -71,9 +72,9 @@ void addTextToMemory(char* text){
     data* currentDataAddress = memoryAddress;
     while (text[counter] != '\0'){
         getchar();
-        wait(&clientSemaphore);
+        wait(clientSemaphore);
         writeCharToDataAddress(text[counter], currentDataAddress);
-        sem_post(&reconstructorSemaphore);
+        sem_post(reconstructorSemaphore);
         counter += 1;
         currentDataAddress = obtainNextDataAddress(currentDataAddress, counter);
         printf("Pendiente: %s", text+counter);
@@ -109,13 +110,9 @@ int main()
 
     secondsBlocked = 0;
 
-    clientSemaphore = sharedMem->clientSemaphore;
-    reconstructorSemaphore = sharedMem->reconstructorSemaphore;
-    metadataSemaphore = sharedMem->metadataSemaphore;
-
-    sem_init(&clientSemaphore, 0, 100);
-    sem_init(&reconstructorSemaphore, 0, 0);
-    sem_init(&metadataSemaphore, 0, 1);
+    clientSemaphore = sem_open(CLIENT_SEMAPHORE, O_CREAT, 0644, MEM_SIZE);
+    reconstructorSemaphore = sem_open(RECONSTRUCTOR_SEMAPHORE, O_CREAT, 0644, 0);
+    metadataSemaphore = sem_open(METADATA_SEMAPHORE, O_CREAT, 0644, 1);
 
     char text[textSize];
     readFile(text);
@@ -123,8 +120,8 @@ int main()
     time(&end);
 
     long userModeTime = end-start;
-    wait(&metadataSemaphore);
+    wait(metadataSemaphore);
     // Escribir en metadata
-    sem_post(&metadataSemaphore);
+    sem_post(metadataSemaphore);
     return 0;
 }

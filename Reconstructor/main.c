@@ -4,12 +4,19 @@
 #include <semaphore.h>
 #include <time.h>
 #include "../data.h"
+#include<sys/ipc.h>
+#include<sys/shm.h>
+#include<sys/types.h>
+#include<string.h>
+#include<errno.h>
+#define MEMORY_KEY 0x1234
 
 long secondsBlocked;
 long transferedCharacters;
-sem_t* clientSemaphore;
-sem_t* reconstructorSemaphore;
-sem_t* metadataSemaphore;
+const char* fileName = "./input.txt";
+sem_t clientSemaphore;
+sem_t reconstructorSemaphore;
+sem_t metadataSemaphore;
 int memSize;
 data *memoryAddress;
 char *metadataAddress;
@@ -63,15 +70,34 @@ int main()
 {
     time_t start, end;
     time(&start);
-    memSize = 100;
-    memoryAddress = (data *) 0x5555555592a0;
+
+    int shmid, numtimes;
+    struct shmseg *shmp;
+    char *bufptr;
+    int spaceavailable;
+    
+    shmid = shmget(MEMORY_KEY, sizeof(MEM_SIZE * sizeof(data)), 0644|IPC_CREAT);
+    if (shmid == -1) {
+        perror("Shared memory");
+        return 1;
+    }
+
+    // Attach to the segment to get a pointer to it.
+    sharedMemory* sharedMem = shmat(shmid, NULL, 0);
+    if (shmp == (void *) -1) {
+        perror("Shared memory attach");
+        return 1;
+    }
+
+    memoryAddress = sharedMem->sharedData;
     // Fix metadataAddress
-    metadataAddress = (char*) malloc(memSize * sizeof(int));
+    metadataAddress = (char*) malloc(MEM_SIZE * sizeof(int));
 
     secondsBlocked = 0;
-    clientSemaphore = (sem_t*) 0x555555558060;
-    reconstructorSemaphore = (sem_t*) 0x5555555580a0;
-    metadataSemaphore = (sem_t*) 0x5555555580c0;
+
+    clientSemaphore = sharedMem->clientSemaphore;
+    reconstructorSemaphore = sharedMem->reconstructorSemaphore;
+    metadataSemaphore = sharedMem->metadataSemaphore;
 
     readTextFromMemory();
     time(&end);

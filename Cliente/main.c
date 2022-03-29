@@ -123,5 +123,12 @@ int main()
     wait(metadataSemaphore);
     // Escribir en metadata
     sem_post(metadataSemaphore);
+
+    sem_close(clientSemaphore);
+    sem_close(reconstructorSemaphore);
+    sem_close(metadataSemaphore);
+    sem_unlink(CLIENT_SEMAPHORE);    
+    sem_unlink(RECONSTRUCTOR_SEMAPHORE);    
+    sem_unlink(METADATA_SEMAPHORE);    
     return 0;
 }

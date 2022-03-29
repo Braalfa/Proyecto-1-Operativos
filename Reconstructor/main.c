@@ -17,7 +17,6 @@ const char* fileName = "./input.txt";
 sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
 sem_t* metadataSemaphore;
-int memSize;
 data *memoryAddress;
 char *metadataAddress;
 int textSize = 1000;
@@ -25,7 +24,7 @@ int textSize = 1000;
 
 
 data* obtainNextDataAddress(data* currentDataAddress, int counter){
-    if (counter == memSize){
+    if (counter == MEM_SIZE){
         return memoryAddress;
     }else{
         return currentDataAddress + 1;

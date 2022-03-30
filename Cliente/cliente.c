@@ -11,8 +11,6 @@
 #include<errno.h>
 #include<fcntl.h>
 
-#define MEMORY_KEY 0x1234
-
 long secondsBlocked = 0;
 long secondsUserMode;
 long transferedCharacters;
@@ -85,6 +83,7 @@ void loadSharedMemory(){
 
     memoryAddress = sharedMem->sharedData;
     metadataStruct = &sharedMem->metaDataStruct;
+    metadataStruct->finished = 0;
 }
 
 void loadSharedSemaphores(){

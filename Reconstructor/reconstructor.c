@@ -9,7 +9,6 @@
 #include<sys/types.h>
 #include<string.h>
 #include<errno.h>
-#define MEMORY_KEY 0x1234
 
 long secondsBlocked = 0;
 long secondsUserMode;
@@ -84,10 +83,7 @@ void readTextFromMemory(){
     int finished = 0;
     char text[textSize];
 
-    while (1){
-        if(reconstructorSemaphore->__align==0 && finished){
-            break;
-        }
+    while(!(reconstructorSemaphore->__align==0 && finished)){
         getchar();
         wait(reconstructorSemaphore);
         finished = hasClientFinished();

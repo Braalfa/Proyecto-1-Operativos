@@ -8,6 +8,7 @@
 #define CLIENT_SEMAPHORE "client"
 #define RECONSTRUCTOR_SEMAPHORE "reconstructor"
 #define METADATA_SEMAPHORE "metadata"
+#define MEMORY_KEY 0x1234
 
 typedef struct data{
     struct tm time;

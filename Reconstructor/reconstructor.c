@@ -42,7 +42,7 @@ int main()
 
     secondsUserMode = end-start;
     addFinalMetadata();
-    printf("\n\n")
+    printf("\n\n");
     return 0;
 }
 

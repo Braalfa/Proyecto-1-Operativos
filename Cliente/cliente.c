@@ -27,22 +27,28 @@ int textSize = 1000;
 void loadSharedMemory();
 void loadSharedSemaphores();
 void addFinalMetadata();
-void readFile(char* text);
+int readFile(char* text);
 void addTextToMemory(char* text);
 void writeCharToDataAddress(char c, data* dataAddress);
 data* obtainNextDataAddress(data* currentDataAddress, int counter);
 void updateMetadataFinishedValue(int value);
 void wait(sem_t* semaphore);
 
-int main()
-{
+int main(int argc, char** argv)
+{  
+    if(argc>1){
+        fileName = argv[1];
+    }
+    
     time_t start, end;
     time(&start);
     loadSharedMemory();
     loadSharedSemaphores();
 
     char text[textSize];
-    readFile(text);
+    if(readFile(text) == 0){
+        return 0;
+    }
     addTextToMemory(text);
     time(&end);
 
@@ -96,14 +102,14 @@ void addFinalMetadata(){
     sem_post(metadataSemaphore);
 }
 
-void readFile(char* text)
+int readFile(char* text)
 {
     int counter = 0;
     FILE *file = fopen(fileName, "r");
     int character;
     if (file == NULL){
-        printf("No se encontró el archivo de lectura");
-        return;
+        printf("No se encontró el archivo de lectura\n");
+        return 0;
     }
     while ((character = fgetc(file)) != EOF)
     {
@@ -111,6 +117,7 @@ void readFile(char* text)
         counter += 1;
     }
     text[counter] = '\0';
+    return 1;
 }
 
 void addTextToMemory(char* text){

@@ -20,7 +20,7 @@ sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
 sem_t* metadataSemaphore;
 data *memoryAddress;
-char *metadataAddress;
+metaData *metadataStruct;
 int textSize = 1000;
 
 
@@ -64,7 +64,13 @@ void wait(sem_t* semaphore){
     clock_gettime(CLOCK_REALTIME, &before);
     sem_wait(semaphore);
     clock_gettime(CLOCK_REALTIME, &after);
-    secondsBlocked = after.tv_sec - before.tv_sec;
+    secondsBlocked += after.tv_sec - before.tv_sec;
+}
+
+void updateMetadataFinishedValue(int value){
+        wait(metadataSemaphore);
+        metadataStruct->finished = value;
+        sem_post(metadataSemaphore);
 }
 
 void addTextToMemory(char* text){
@@ -74,8 +80,9 @@ void addTextToMemory(char* text){
         getchar();
         wait(clientSemaphore);
         writeCharToDataAddress(text[counter], currentDataAddress);
-        sem_post(reconstructorSemaphore);
         counter += 1;
+        updateMetadataFinishedValue(text[counter] == '\0');
+        sem_post(reconstructorSemaphore);
         currentDataAddress = obtainNextDataAddress(currentDataAddress, counter);
         printf("Pendiente: %s", text+counter);
     }
@@ -105,8 +112,7 @@ int main()
     }
 
     memoryAddress = sharedMem->sharedData;
-    // Fix metadataAddress
-    metadataAddress = (char*) malloc(MEM_SIZE * sizeof(int));
+    metadataStruct = &sharedMem->metaDataStruct;
 
     secondsBlocked = 0;
 
@@ -119,9 +125,12 @@ int main()
     addTextToMemory(text);
     time(&end);
 
-    long userModeTime = end-start;
+    long secondsUserMode = end-start;
     wait(metadataSemaphore);
-    // Escribir en metadata
+    metadataStruct->clientUserModeSeconds = secondsUserMode;
+    metadataStruct->clientBlockedSeconds = secondsBlocked;
+    metadataStruct->totalMemorySpace = sizeof(sharedMemory);
+    metadataStruct->transferedCharacters = strlen(text);
     sem_post(metadataSemaphore);
 
     sem_close(clientSemaphore);

@@ -14,9 +14,19 @@ typedef struct data{
     char character;
 } data;
 
+typedef struct metaData{
+    int finished;
+    long clientBlockedSeconds;
+    long reconstructorBlockedSeconds;
+    long clientUserModeSeconds;
+    long reconstructorUserModeSeconds;
+    int transferedCharacters;
+    int totalMemorySpace;
+} metaData;
+
 typedef struct sharedMemory{
     data sharedData[MEM_SIZE];
+    metaData metaDataStruct;
 } sharedMemory;
-
 
 #endif //PROYECTO_1_OPERATIVOS_DATA_H

@@ -8,6 +8,7 @@
 #define CLIENT_SEMAPHORE "client"
 #define RECONSTRUCTOR_SEMAPHORE "reconstructor"
 #define METADATA_SEMAPHORE "metadata"
+#define FINALIZATION_SEMAPHORE "finalization"
 #define MEMORY_KEY 0x1234
 
 typedef struct data{
@@ -16,7 +17,7 @@ typedef struct data{
 } data;
 
 typedef struct metaData{
-    int finished;
+    int clienteFinished;
     long clientBlockedSeconds;
     long reconstructorBlockedSeconds;
     long clientUserModeSeconds;

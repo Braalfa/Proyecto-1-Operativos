@@ -17,6 +17,7 @@ const char* fileName = "./input.txt";
 sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
 sem_t* metadataSemaphore;
+sem_t* finalizationSemaphore;
 data *memoryAddress;
 metaData *metadataStruct;
 int textSize = 1000;
@@ -41,6 +42,7 @@ int main()
 
     secondsUserMode = end-start;
     addFinalMetadata();
+    sem_post(finalizationSemaphore);
     printf("\n\n");
     return 0;
 }
@@ -56,6 +58,7 @@ void loadSharedSemaphores(){
     clientSemaphore = sem_open(CLIENT_SEMAPHORE, 0);
     reconstructorSemaphore = sem_open(RECONSTRUCTOR_SEMAPHORE, 0);
     metadataSemaphore = sem_open(METADATA_SEMAPHORE, 0);
+    finalizationSemaphore = sem_open(FINALIZATION_SEMAPHORE, 0);
 }
 
 void loadSharedMemory(){    
@@ -91,14 +94,14 @@ void readTextFromMemory(){
         sem_post(clientSemaphore);
         counter += 1;
         currentDataAddress = obtainNextDataAddress(currentDataAddress, counter);
-        printf("Reconstruccion: %s", text);
+        printf("Reconstruccion: %s\n", text);
     }
 }
 
 
 int hasClientFinished(){
     wait(metadataSemaphore);
-    int finished = metadataStruct->finished;
+    int finished = metadataStruct->clienteFinished;
     sem_post(metadataSemaphore);
     return finished;
 }

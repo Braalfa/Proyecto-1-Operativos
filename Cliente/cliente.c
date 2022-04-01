@@ -18,6 +18,7 @@ const char* fileName = "./input.txt";
 sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
 sem_t* metadataSemaphore;
+sem_t* finalizationSemaphore;
 data *memoryAddress;
 metaData *metadataStruct;
 int textSize = 1000;
@@ -42,6 +43,7 @@ int main(int argc, char** argv)
     time(&start);
     loadSharedMemory();
     loadSharedSemaphores();
+    sem_wait(finalizationSemaphore);
 
     char text[textSize];
     if(readFile(text) == 0){
@@ -83,13 +85,15 @@ void loadSharedMemory(){
 
     memoryAddress = sharedMem->sharedData;
     metadataStruct = &sharedMem->metaDataStruct;
-    metadataStruct->finished = 0;
+    metadataStruct->clienteFinished = 0;
 }
 
 void loadSharedSemaphores(){
     clientSemaphore = sem_open(CLIENT_SEMAPHORE, O_CREAT, 0644, MEM_SIZE);
     reconstructorSemaphore = sem_open(RECONSTRUCTOR_SEMAPHORE, O_CREAT, 0644, 0);
     metadataSemaphore = sem_open(METADATA_SEMAPHORE, O_CREAT, 0644, 1);
+    finalizationSemaphore = sem_open(FINALIZATION_SEMAPHORE, O_CREAT, 0644, 1);
+
 }
 
 void addFinalMetadata(){
@@ -130,7 +134,7 @@ void addTextToMemory(char* text){
         updateMetadataFinishedValue(text[counter] == '\0');
         sem_post(reconstructorSemaphore);
         currentDataAddress = obtainNextDataAddress(currentDataAddress, counter);
-        printf("Pendiente: %s", text+counter);
+        printf("Pendiente: %s\n", text+counter);
     }
 }
 
@@ -154,7 +158,7 @@ data* obtainNextDataAddress(data* currentDataAddress, int counter){
 
 void updateMetadataFinishedValue(int value){
         wait(metadataSemaphore);
-        metadataStruct->finished = value;
+        metadataStruct->clienteFinished = value;
         sem_post(metadataSemaphore);
 }
 

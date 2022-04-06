@@ -15,6 +15,8 @@ long secondsBlocked = 0;
 long secondsUserMode;
 long transferedCharacters;
 int memorySize;
+int metadataID;
+int sharedDataID;
 const char* fileName = "./input.txt";
 sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
@@ -35,13 +37,19 @@ void writeCharToDataAddress(char c, data* dataAddress);
 data* obtainNextDataAddress(data* currentDataAddress, int counter);
 void updateMetadataFinishedValue(int value);
 void wait(sem_t* semaphore);
+void removeMemory();
 
 int main(int argc, char** argv)
 {  
     if(argc>1){
         fileName = argv[1];
     }
-    
+
+    sem_unlink(CLIENT_SEMAPHORE);    
+    sem_unlink(RECONSTRUCTOR_SEMAPHORE);    
+    sem_unlink(METADATA_SEMAPHORE);
+    sem_unlink(FINALIZATION_SEMAPHORE);   
+
     time_t start, end;
     time(&start);
     loadMetadataSemaphore();
@@ -69,27 +77,40 @@ int main(int argc, char** argv)
     sem_unlink(CLIENT_SEMAPHORE);    
     sem_unlink(RECONSTRUCTOR_SEMAPHORE);    
     sem_unlink(METADATA_SEMAPHORE);
-    sem_unlink(FINALIZATION_SEMAPHORE);       
+    sem_unlink(FINALIZATION_SEMAPHORE);
+    removeMemory();
     return 0;
 }
 
+void removeMemory(){
+    shmctl(metadataID, IPC_RMID, NULL);
+    shmctl(sharedDataID, IPC_RMID, NULL);
+}
+
 void loadMetadata(){
-    int shmid;    
-    shmid = shmget(METADATA_KEY, sizeof(metaData), 0644|IPC_CREAT);
-    metadataStruct = shmat(shmid, NULL, 0);
+    metadataID = shmget(METADATA_KEY, sizeof(metaData), 0644|IPC_CREAT);
+    if (metadataID < 0) {
+        perror("shmget error\n");
+        exit(1);
+    }
+
+    metadataStruct = shmat(metadataID, NULL, 0);
 
     wait(metadataSemaphore);
     // La siguiente linea si va en el inicializador (define el tamano del array)
-    metadataStruct->sharedMemorySize = 5;
+    metadataStruct->sharedMemorySize = 15;
     // La siguiente linea no va en el inicializador
     memorySize = metadataStruct->sharedMemorySize;
     sem_post(metadataSemaphore);
 }
 
 void loadSharedMemory(){
-    int shmid;
-    shmid = shmget(MEMORY_KEY, memorySize*sizeof(data), 0644|IPC_CREAT);
-    memoryAddress = shmat(shmid, NULL, 0);
+    sharedDataID = shmget(MEMORY_KEY, memorySize*sizeof(data), 0644|IPC_CREAT);
+    if (sharedDataID < 0) {
+        perror("shmget error\n");
+        exit(1);
+    }
+    memoryAddress = shmat(sharedDataID, NULL, 0);
 }
 
 void loadSharedSemaphores(){

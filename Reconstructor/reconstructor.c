@@ -47,6 +47,8 @@ int main()
 
     secondsUserMode = end-start;
     addFinalMetadata();
+    // Se sube dos veces: para creador y estadisticas
+    sem_post(finalizationSemaphore);
     sem_post(finalizationSemaphore);
     printf("\n\n");
     return 0;

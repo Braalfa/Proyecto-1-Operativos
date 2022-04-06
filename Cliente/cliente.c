@@ -64,7 +64,8 @@ int main(int argc, char** argv)
     sem_close(metadataSemaphore);
     sem_unlink(CLIENT_SEMAPHORE);    
     sem_unlink(RECONSTRUCTOR_SEMAPHORE);    
-    sem_unlink(METADATA_SEMAPHORE);    
+    sem_unlink(METADATA_SEMAPHORE);
+    sem_unlink(FINALIZATION_SEMAPHORE);       
     return 0;
 }
 
@@ -72,7 +73,7 @@ void loadSharedMemory(){
     int shmid;
     struct shmseg *shmp;
     
-    shmid = shmget(MEMORY_KEY, sizeof(MEM_SIZE * sizeof(data)), 0644|IPC_CREAT);
+    shmid = shmget(MEMORY_KEY, sizeof(sharedMemory), 0644|IPC_CREAT);
     if (shmid == -1) {
         perror("Shared memory");
     }

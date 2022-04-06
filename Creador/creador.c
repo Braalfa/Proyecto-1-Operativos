@@ -28,6 +28,10 @@ void createMetadataSemaphore();
 void createSharedSemaphores();
 void wait(sem_t* semaphore);
 void removeMemory();
+void printMemory();
+void readTextFromMemory();
+void loadCharFromDataAddress(data* dataAddress);
+data* obtainNextDataAddress(data* currentDataAddress, int counter);
 
 int main(int argc, char** argv)
 {  
@@ -38,6 +42,8 @@ int main(int argc, char** argv)
     createMetadata();
     createSharedMemory();
     createSharedSemaphores();
+
+    printMemory();
 
     sem_wait(finalizationSemaphore);
 
@@ -51,6 +57,15 @@ int main(int argc, char** argv)
     sem_unlink(FINALIZATION_SEMAPHORE);
     removeMemory();
     return 0;
+}
+
+void printMemory(){
+    int finished = 0;
+    while(!(reconstructorSemaphore->__align==0 && finished)){
+        readTextFromMemory();
+        finished = metadataStruct->clienteFinished;
+        sleep(1);
+    }
 }
 
 void removeMemory(){
@@ -67,10 +82,12 @@ void createMetadata(){
 
     metadataStruct = shmat(metadataID, NULL, 0);
 
+
     wait(metadataSemaphore);
     // La siguiente linea define el tamano del array
-    metadataStruct->sharedMemorySize = 15;
-    memorySize = metadataStruct->sharedMemorySize;
+    printf("ingrese la cantidad de espacios de la memoria: ");
+    scanf("%d", &memorySize);
+    metadataStruct->sharedMemorySize = memorySize;
     sem_post(metadataSemaphore);
 }
 
@@ -91,4 +108,29 @@ void createSharedSemaphores(){
 
 void createMetadataSemaphore(){
     metadataSemaphore = sem_open(METADATA_SEMAPHORE, O_CREAT, 0644, 1);
+}
+
+void loadCharFromDataAddress(data* dataAddress){
+    char time[64];
+    strftime(time, sizeof(time), "%c", &dataAddress->time);
+    printf("data: %c| fecha: %s| posición: %li\n",
+           dataAddress->character, time, dataAddress-memoryAddress);
+}
+
+data* obtainNextDataAddress(data* currentDataAddress, int counter){
+    if (counter == memorySize){
+        return memoryAddress;
+    }else{
+        return currentDataAddress + 1;
+    }
+}
+void readTextFromMemory() {
+    int counter = 0;
+    data *currentDataAddress = memoryAddress;
+    while (counter < memorySize) {
+        loadCharFromDataAddress(currentDataAddress);
+        counter += 1;
+        currentDataAddress = obtainNextDataAddress(currentDataAddress, counter);
+    }
+    printf("----------------------------------------------------------\n");
 }

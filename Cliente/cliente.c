@@ -14,6 +14,7 @@
 long secondsBlocked = 0;
 long secondsUserMode;
 long transferedCharacters;
+int memorySize;
 const char* fileName = "./input.txt";
 sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
@@ -23,7 +24,9 @@ data *memoryAddress;
 metaData *metadataStruct;
 int textSize = 1000;
 
+void loadMetadata();
 void loadSharedMemory();
+void loadMetadataSemaphore();
 void loadSharedSemaphores();
 void addFinalMetadata();
 int readFile(char* text);
@@ -35,12 +38,20 @@ void wait(sem_t* semaphore);
 
 int main(int argc, char** argv)
 {  
+
+    sem_unlink(CLIENT_SEMAPHORE);    
+    sem_unlink(RECONSTRUCTOR_SEMAPHORE);    
+    sem_unlink(METADATA_SEMAPHORE);
+    sem_unlink(FINALIZATION_SEMAPHORE);       
+
     if(argc>1){
         fileName = argv[1];
     }
     
     time_t start, end;
     time(&start);
+    loadMetadataSemaphore();
+    loadMetadata();
     loadSharedMemory();
     loadSharedSemaphores();
     sem_wait(finalizationSemaphore);
@@ -69,39 +80,40 @@ int main(int argc, char** argv)
     return 0;
 }
 
+void loadMetadata(){
+    int shmid;    
+    shmid = shmget(METADATA_KEY, sizeof(metaData), 0644|IPC_CREAT);
+    metadataStruct = shmat(shmid, NULL, 0);
+
+    wait(metadataSemaphore);
+    // La siguiente linea si va en el inicializador (define el tamano del array)
+    metadataStruct->sharedMemorySize = 5;
+    // La siguiente linea no va en el inicializador
+    memorySize = metadataStruct->sharedMemorySize;
+    sem_post(metadataSemaphore);
+}
+
 void loadSharedMemory(){
     int shmid;
-    struct shmseg *shmp;
-    
-    shmid = shmget(MEMORY_KEY, sizeof(sharedMemory), 0644|IPC_CREAT);
-    if (shmid == -1) {
-        perror("Shared memory");
-    }
-
-    // Attach to the segment to get a pointer to it.
-    sharedMemory* sharedMem = shmat(shmid, NULL, 0);
-    if (shmp == (void *) -1) {
-        perror("Shared memory attach");
-    }
-
-    memoryAddress = sharedMem->sharedData;
-    metadataStruct = &sharedMem->metaDataStruct;
-    metadataStruct->clienteFinished = 0;
+    shmid = shmget(MEMORY_KEY, memorySize*sizeof(data), 0644|IPC_CREAT);
+    memoryAddress = shmat(shmid, NULL, 0);
 }
 
 void loadSharedSemaphores(){
-    clientSemaphore = sem_open(CLIENT_SEMAPHORE, O_CREAT, 0644, MEM_SIZE);
+    clientSemaphore = sem_open(CLIENT_SEMAPHORE, O_CREAT, 0644, memorySize);
     reconstructorSemaphore = sem_open(RECONSTRUCTOR_SEMAPHORE, O_CREAT, 0644, 0);
-    metadataSemaphore = sem_open(METADATA_SEMAPHORE, O_CREAT, 0644, 1);
     finalizationSemaphore = sem_open(FINALIZATION_SEMAPHORE, O_CREAT, 0644, 1);
+}
 
+void loadMetadataSemaphore(){
+    metadataSemaphore = sem_open(METADATA_SEMAPHORE, O_CREAT, 0644, 1);
 }
 
 void addFinalMetadata(){
     wait(metadataSemaphore);
     metadataStruct->clientUserModeSeconds = secondsUserMode;
     metadataStruct->clientBlockedSeconds = secondsBlocked;
-    metadataStruct->totalMemorySpace = sizeof(sharedMemory);
+    metadataStruct->totalMemorySpace = metadataStruct->sharedMemorySize*sizeof(data);
     metadataStruct->transferedCharacters = transferedCharacters;
     sem_post(metadataSemaphore);
 }
@@ -150,7 +162,7 @@ void writeCharToDataAddress(char c, data* dataAddress){
 }
 
 data* obtainNextDataAddress(data* currentDataAddress, int counter){
-    if (counter == MEM_SIZE){
+    if (counter == memorySize){
         return memoryAddress;
     }else{
         return currentDataAddress + 1;

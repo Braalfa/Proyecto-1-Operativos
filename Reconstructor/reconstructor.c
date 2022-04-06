@@ -13,6 +13,7 @@
 long secondsBlocked = 0;
 long secondsUserMode;
 long transferedCharacters;
+int memorySize;
 const char* fileName = "./input.txt";
 sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
@@ -23,6 +24,8 @@ metaData *metadataStruct;
 int textSize = 1000;
 
 void addFinalMetadata();
+void loadMetadata();
+void loadMetadataSemaphore();
 void loadSharedSemaphores();
 void loadSharedMemory();
 void readTextFromMemory();
@@ -35,6 +38,8 @@ int main()
 {
     time_t start, end;
     time(&start);
+    loadMetadataSemaphore();
+    loadMetadata();
     loadSharedMemory();
     loadSharedSemaphores();
     readTextFromMemory();
@@ -57,27 +62,28 @@ void addFinalMetadata(){
 void loadSharedSemaphores(){
     clientSemaphore = sem_open(CLIENT_SEMAPHORE, 0);
     reconstructorSemaphore = sem_open(RECONSTRUCTOR_SEMAPHORE, 0);
-    metadataSemaphore = sem_open(METADATA_SEMAPHORE, 0);
     finalizationSemaphore = sem_open(FINALIZATION_SEMAPHORE, 0);
 }
 
+void loadMetadataSemaphore(){
+    metadataSemaphore = sem_open(METADATA_SEMAPHORE, 0);
+}
+
+void loadMetadata(){
+    int shmid;
+
+    shmid = shmget(METADATA_KEY, sizeof(metaData), 0644|IPC_CREAT);
+    metadataStruct = shmat(shmid, NULL, 0);
+
+    wait(metadataSemaphore);
+    memorySize = metadataStruct->sharedMemorySize;
+    sem_post(metadataSemaphore);
+}
+
 void loadSharedMemory(){    
-    int shmid, numtimes;
-    struct shmseg *shmp;
-    char *bufptr;
-    
-    shmid = shmget(MEMORY_KEY, sizeof(MEM_SIZE * sizeof(data)), 0644|IPC_CREAT);
-    if (shmid == -1) {
-        perror("Shared memory");
-    }
-
-    sharedMemory* sharedMem = shmat(shmid, NULL, 0);
-    if (shmp == (void *) -1) {
-        perror("Shared memory attach");
-    }
-
-    memoryAddress = sharedMem->sharedData;
-    metadataStruct = &sharedMem->metaDataStruct;
+    int shmid;    
+    shmid = shmget(MEMORY_KEY, memorySize*sizeof(data), 0644|IPC_CREAT);
+    memoryAddress = shmat(shmid, NULL, 0);
 }
 
 void readTextFromMemory(){
@@ -124,7 +130,7 @@ void loadCharFromDataAddress(char* text, data* dataAddress, int position){
 }
 
 data* obtainNextDataAddress(data* currentDataAddress, int counter){
-    if (counter == MEM_SIZE){
+    if (counter == memorySize){
         return memoryAddress;
     }else{
         return currentDataAddress + 1;

@@ -38,12 +38,6 @@ void wait(sem_t* semaphore);
 
 int main(int argc, char** argv)
 {  
-
-    sem_unlink(CLIENT_SEMAPHORE);    
-    sem_unlink(RECONSTRUCTOR_SEMAPHORE);    
-    sem_unlink(METADATA_SEMAPHORE);
-    sem_unlink(FINALIZATION_SEMAPHORE);       
-
     if(argc>1){
         fileName = argv[1];
     }
@@ -54,7 +48,6 @@ int main(int argc, char** argv)
     loadMetadata();
     loadSharedMemory();
     loadSharedSemaphores();
-    sem_wait(finalizationSemaphore);
 
     char text[textSize];
     if(readFile(text) == 0){
@@ -102,7 +95,7 @@ void loadSharedMemory(){
 void loadSharedSemaphores(){
     clientSemaphore = sem_open(CLIENT_SEMAPHORE, O_CREAT, 0644, memorySize);
     reconstructorSemaphore = sem_open(RECONSTRUCTOR_SEMAPHORE, O_CREAT, 0644, 0);
-    finalizationSemaphore = sem_open(FINALIZATION_SEMAPHORE, O_CREAT, 0644, 1);
+    finalizationSemaphore = sem_open(FINALIZATION_SEMAPHORE, O_CREAT, 0644, 0);
 }
 
 void loadMetadataSemaphore(){

@@ -69,6 +69,11 @@ void loadMetadata(){
     int shmid;
 
     shmid = shmget(METADATA_KEY, sizeof(metaData), 0644|IPC_CREAT);
+    if (shmid < 0) {
+        perror("shmget error\n");
+        exit(1);
+    }
+
     metadataStruct = shmat(shmid, NULL, 0);
 
     wait(metadataSemaphore);
@@ -79,6 +84,11 @@ void loadMetadata(){
 void loadSharedMemory(){    
     int shmid;    
     shmid = shmget(MEMORY_KEY, memorySize*sizeof(data), 0644|IPC_CREAT);
+    if (shmid < 0) {
+        perror("shmget error\n");
+        exit(1);
+    }
+
     memoryAddress = shmat(shmid, NULL, 0);
 }
 

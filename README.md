@@ -5,3 +5,4 @@ gcc estadisticas.c -o estadisticas -lpthread && ./estadisticas
 
 
 Ver memoria compartida: ipcs
+Matar memoria compartida: ipcrm shm memoryid

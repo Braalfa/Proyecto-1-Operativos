@@ -35,6 +35,10 @@ data* obtainNextDataAddress(data* currentDataAddress, int counter);
 
 int main(int argc, char** argv)
 {  
+    sem_unlink(CLIENT_SEMAPHORE);    
+    sem_unlink(RECONSTRUCTOR_SEMAPHORE);    
+    sem_unlink(METADATA_SEMAPHORE);
+    sem_unlink(FINALIZATION_SEMAPHORE);
 
     time_t start, end;
     time(&start);

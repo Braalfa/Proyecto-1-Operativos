@@ -102,8 +102,8 @@ void printData(){
     printf("Tiempo Bloqueado Reconstructor: %lu s\n", metadataStruct->reconstructorBlockedSeconds);
     printf("Caracter Transferidos: %d \n", metadataStruct->transferedCharacters);
     printf("Espacio Total de Memoria Utilizado (Datos): %d \n", metadataStruct->totalMemorySpace);
-    printf("Tiempo Total en Modo Usuario Cliente: %lu s\n", metadataStruct->clientUserModeSeconds);
-    printf("Tiempo Total en Modo Usuario ReConstructor: %lu s\n", metadataStruct->reconstructorUserModeSeconds);
+    printf("Tiempo Total en Modo Usuario Cliente: %lu microsegundos\n", metadataStruct->clientUserModeMicroSeconds);
+    printf("Tiempo Total en Modo Usuario ReConstructor: %lu microsegundos\n", metadataStruct->reconstructorUserModeMicroSeconds);
     printf("==================================================\n");
     return;
 }

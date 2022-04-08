@@ -20,8 +20,8 @@ typedef struct metaData{
     int clienteFinished;
     long clientBlockedSeconds;
     long reconstructorBlockedSeconds;
-    long clientUserModeSeconds;
-    long reconstructorUserModeSeconds;
+    long clientUserModeMicroSeconds;
+    long reconstructorUserModeMicroSeconds;
     int transferedCharacters;
     int totalMemorySpace;
     int sharedMemorySize;

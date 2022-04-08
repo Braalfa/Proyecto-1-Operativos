@@ -9,9 +9,10 @@
 #include<sys/types.h>
 #include<string.h>
 #include<errno.h>
+#include <sys/resource.h>
 
 long secondsBlocked = 0;
-long secondsUserMode;
+long timeUserMode;
 long transferedCharacters;
 int memorySize;
 const char* fileName = "./input.txt";
@@ -36,18 +37,17 @@ data* obtainNextDataAddress(data* currentDataAddress, int counter);
 
 int main()
 {
-    time_t start, end;
-    time(&start);
     loadMetadataSemaphore();
     loadMetadata();
     loadSharedMemory();
     loadSharedSemaphores();
     readTextFromMemory();
-    time(&end);
 
-    secondsUserMode = end-start;
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage); 
+    timeUserMode = usage.ru_utime.tv_sec*1000000 + usage.ru_utime.tv_usec;
+
     addFinalMetadata();
-    // Se sube dos veces: para creador y estadisticas
     sem_post(finalizationSemaphore);
     printf("\n\n");
     return 0;
@@ -56,7 +56,7 @@ int main()
 void addFinalMetadata(){
     wait(metadataSemaphore);
     metadataStruct->reconstructorBlockedSeconds = secondsBlocked;
-    metadataStruct->reconstructorUserModeSeconds = secondsUserMode;
+    metadataStruct->reconstructorUserModeMicroSeconds = timeUserMode;
     sem_post(metadataSemaphore);
 }
 

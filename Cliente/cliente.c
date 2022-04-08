@@ -10,13 +10,14 @@
 #include<string.h>
 #include<errno.h>
 #include<fcntl.h>
+#include <sys/resource.h>
 
 int textSize = 1000;
 int memorySize;
 const char* fileName = "./input.txt";
 
 long secondsBlocked = 0;
-long secondsUserMode;
+long timeUserMode;
 long transferedCharacters;
 sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
@@ -43,8 +44,6 @@ int main(int argc, char** argv)
         fileName = argv[1];
     }
 
-    time_t start, end;
-    time(&start);
     loadMetadataSemaphore();
     loadMetadata();
     loadSharedMemory();
@@ -55,9 +54,11 @@ int main(int argc, char** argv)
         return 0;
     }
     addTextToMemory(text);
-    time(&end);
 
-    secondsUserMode = end-start;
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage); 
+    timeUserMode = usage.ru_utime.tv_sec*1000000 + usage.ru_utime.tv_usec;
+    
     transferedCharacters = strlen(text);
     addFinalMetadata();
     
@@ -104,7 +105,7 @@ void loadMetadataSemaphore(){
 
 void addFinalMetadata(){
     wait(metadataSemaphore);
-    metadataStruct->clientUserModeSeconds = secondsUserMode;
+    metadataStruct->clientUserModeMicroSeconds = timeUserMode;
     metadataStruct->clientBlockedSeconds = secondsBlocked;
     metadataStruct->totalMemorySpace = metadataStruct->sharedMemorySize*sizeof(data)+sizeof(metaData);
     metadataStruct->transferedCharacters = transferedCharacters;

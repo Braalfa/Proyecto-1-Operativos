@@ -96,7 +96,7 @@ void addFinalMetadata(){
     wait(metadataSemaphore);
     metadataStruct->clientUserModeSeconds = secondsUserMode;
     metadataStruct->clientBlockedSeconds = secondsBlocked;
-    metadataStruct->totalMemorySpace = metadataStruct->sharedMemorySize*sizeof(data);
+    metadataStruct->totalMemorySpace = metadataStruct->sharedMemorySize*sizeof(data)+sizeof(metaData);
     metadataStruct->transferedCharacters = transferedCharacters;
     sem_post(metadataSemaphore);
 }

@@ -108,7 +108,7 @@ void loadCharFromDataAddress(data* dataAddress){
 }
 
 data* obtainNextDataAddress(data* currentDataAddress, int counter){
-    if (counter == memorySize){
+    if (counter%memorySize==0){
         return memoryAddress;
     }else{
         return currentDataAddress + 1;

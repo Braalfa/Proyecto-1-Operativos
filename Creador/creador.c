@@ -45,16 +45,6 @@ int main(int argc, char** argv)
 
     printMemory();
 
-    sem_wait(finalizationSemaphore);
-
-    // Esto va en finalizador
-    sem_close(clientSemaphore);
-    sem_close(reconstructorSemaphore);
-    sem_close(metadataSemaphore);
-    sem_unlink(CLIENT_SEMAPHORE);    
-    sem_unlink(RECONSTRUCTOR_SEMAPHORE);    
-    sem_unlink(METADATA_SEMAPHORE);
-    sem_unlink(FINALIZATION_SEMAPHORE);
     removeMemory();
     return 0;
 }

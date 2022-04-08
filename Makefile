@@ -2,15 +2,15 @@ CC		= gcc
 CFLAGS	= -lpthread
 RM		= rm -f
 
-all: creador cliente reconstructor estadisticas
+all: creadorr clientee reconstructorr estadisticas
 
-creador: Creador/creador.c
+creadorr: Creador/creador.c
 	$(CC) Creador/creador.c -o compilado/creador  $(CFLAGS)
 
-cliente: Cliente/cliente.c
+clientee: Cliente/cliente.c
 	$(CC) Cliente/cliente.c -o compilado/cliente  $(CFLAGS)
 
-reconstructor: Reconstructor/reconstructor.c
+reconstructorr: Reconstructor/reconstructor.c
 	$(CC) Reconstructor/reconstructor.c -o compilado/reconstructor  $(CFLAGS)
 
 estadisticas: Estadistico/estadisticas.c

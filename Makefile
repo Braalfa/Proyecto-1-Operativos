@@ -4,16 +4,16 @@ RM		= rm -f
 
 all: creador cliente reconstructor estadisticas
 
-creador: creador.c
+creador: Creador/creador.c
 	$(CC) Creador/creador.c -o compilado/creador  $(CFLAGS)
 
-cliente:
+cliente: Cliente/cliente.c
 	$(CC) Cliente/cliente.c -o compilado/cliente  $(CFLAGS)
 
-reconstructor:
+reconstructor: Reconstructor/reconstructor.c
 	$(CC) Reconstructor/reconstructor.c -o compilado/reconstructor  $(CFLAGS)
 
-estadisticas:
+estadisticas: Estadistico/estadisticas.c
 	$(CC) Estadistico/estadisticas.c -o compilado/estadisticas  $(CFLAGS)
 
 clean veryclean:

@@ -4,11 +4,12 @@
 #ifndef PROYECTO_1_OPERATIVOS_DATA_H
 #define PROYECTO_1_OPERATIVOS_DATA_H
 
-#define MEM_SIZE 5
 #define CLIENT_SEMAPHORE "client"
 #define RECONSTRUCTOR_SEMAPHORE "reconstructor"
 #define METADATA_SEMAPHORE "metadata"
+#define FINALIZATION_SEMAPHORE "finalization"
 #define MEMORY_KEY 0x1234
+#define METADATA_KEY 0x1235
 
 typedef struct data{
     struct tm time;
@@ -16,18 +17,14 @@ typedef struct data{
 } data;
 
 typedef struct metaData{
-    int finished;
+    int clienteFinished;
     long clientBlockedSeconds;
     long reconstructorBlockedSeconds;
-    long clientUserModeSeconds;
-    long reconstructorUserModeSeconds;
+    long clientUserModeMicroSeconds;
+    long reconstructorUserModeMicroSeconds;
     int transferedCharacters;
     int totalMemorySpace;
+    int sharedMemorySize;
 } metaData;
-
-typedef struct sharedMemory{
-    data sharedData[MEM_SIZE];
-    metaData metaDataStruct;
-} sharedMemory;
 
 #endif //PROYECTO_1_OPERATIVOS_DATA_H

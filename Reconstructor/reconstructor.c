@@ -9,19 +9,24 @@
 #include<sys/types.h>
 #include<string.h>
 #include<errno.h>
+#include <sys/resource.h>
 
 long secondsBlocked = 0;
-long secondsUserMode;
+long timeUserMode;
 long transferedCharacters;
+int memorySize;
 const char* fileName = "./input.txt";
 sem_t* clientSemaphore;
 sem_t* reconstructorSemaphore;
 sem_t* metadataSemaphore;
+sem_t* finalizationSemaphore;
 data *memoryAddress;
 metaData *metadataStruct;
 int textSize = 1000;
 
 void addFinalMetadata();
+void loadMetadata();
+void loadMetadataSemaphore();
 void loadSharedSemaphores();
 void loadSharedMemory();
 void readTextFromMemory();
@@ -32,15 +37,18 @@ data* obtainNextDataAddress(data* currentDataAddress, int counter);
 
 int main()
 {
-    time_t start, end;
-    time(&start);
+    loadMetadataSemaphore();
+    loadMetadata();
     loadSharedMemory();
     loadSharedSemaphores();
     readTextFromMemory();
-    time(&end);
 
-    secondsUserMode = end-start;
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage); 
+    timeUserMode = usage.ru_utime.tv_sec*1000000 + usage.ru_utime.tv_usec;
+
     addFinalMetadata();
+    sem_post(finalizationSemaphore);
     printf("\n\n");
     return 0;
 }
@@ -48,33 +56,46 @@ int main()
 void addFinalMetadata(){
     wait(metadataSemaphore);
     metadataStruct->reconstructorBlockedSeconds = secondsBlocked;
-    metadataStruct->reconstructorUserModeSeconds = secondsUserMode;
+    metadataStruct->reconstructorUserModeMicroSeconds = timeUserMode;
     sem_post(metadataSemaphore);
 }
 
 void loadSharedSemaphores(){
     clientSemaphore = sem_open(CLIENT_SEMAPHORE, 0);
     reconstructorSemaphore = sem_open(RECONSTRUCTOR_SEMAPHORE, 0);
+    finalizationSemaphore = sem_open(FINALIZATION_SEMAPHORE, 0);
+}
+
+void loadMetadataSemaphore(){
     metadataSemaphore = sem_open(METADATA_SEMAPHORE, 0);
 }
 
+void loadMetadata(){
+    int shmid;
+
+    shmid = shmget(METADATA_KEY, sizeof(metaData), 0644|IPC_CREAT);
+
+    if (shmid < 0) {
+        perror("shmget error\n");
+        exit(1);
+    }
+
+    metadataStruct = shmat(shmid, NULL, 0);
+
+    wait(metadataSemaphore);
+    memorySize = metadataStruct->sharedMemorySize;
+    sem_post(metadataSemaphore);
+}
+
 void loadSharedMemory(){    
-    int shmid, numtimes;
-    struct shmseg *shmp;
-    char *bufptr;
-    
-    shmid = shmget(MEMORY_KEY, sizeof(MEM_SIZE * sizeof(data)), 0644|IPC_CREAT);
-    if (shmid == -1) {
-        perror("Shared memory");
+    int shmid;    
+    shmid = shmget(MEMORY_KEY, memorySize*sizeof(data), 0644|IPC_CREAT);
+    if (shmid < 0) {
+        perror("shmget error\n");
+        exit(1);
     }
 
-    sharedMemory* sharedMem = shmat(shmid, NULL, 0);
-    if (shmp == (void *) -1) {
-        perror("Shared memory attach");
-    }
-
-    memoryAddress = sharedMem->sharedData;
-    metadataStruct = &sharedMem->metaDataStruct;
+    memoryAddress = shmat(shmid, NULL, 0);
 }
 
 void readTextFromMemory(){
@@ -91,14 +112,14 @@ void readTextFromMemory(){
         sem_post(clientSemaphore);
         counter += 1;
         currentDataAddress = obtainNextDataAddress(currentDataAddress, counter);
-        printf("Reconstruccion: %s", text);
+        printf("Reconstruccion: %s\n", text);
     }
 }
 
 
 int hasClientFinished(){
     wait(metadataSemaphore);
-    int finished = metadataStruct->finished;
+    int finished = metadataStruct->clienteFinished;
     sem_post(metadataSemaphore);
     return finished;
 }
@@ -121,7 +142,7 @@ void loadCharFromDataAddress(char* text, data* dataAddress, int position){
 }
 
 data* obtainNextDataAddress(data* currentDataAddress, int counter){
-    if (counter == MEM_SIZE){
+    if (counter%memorySize==0){
         return memoryAddress;
     }else{
         return currentDataAddress + 1;

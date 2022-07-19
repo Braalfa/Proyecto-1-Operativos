@@ -4,3 +4,7 @@ Reconstructor/reconstructor
 *.o
 
 Cliente/cliente
+
+Creador/creador
+
+.idea/
